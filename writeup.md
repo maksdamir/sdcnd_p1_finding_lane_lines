@@ -25,10 +25,11 @@ The goals / steps of this project are the following:
 
 ### Reflection
 
-For all details see P1.ipynb for complete code.
-Processed videos can be found in test_videos with _processed.mp4 suffix.
+Check P1.ipynb for complete code.
 
-###1. Lane finding Pipeline. process_image_core function
+Processed videos / images can be found in output_videos / output_images folders.
+
+###1. Lane finding Pipeline : process_image_core function
 
 Steps:
 
