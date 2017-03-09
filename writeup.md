@@ -30,8 +30,6 @@ Processed videos can be found in test_videos with _processed.mp4 suffix.
 
 ###1. Lane finding Pipeline. process_image_core function
 
-Pipeline is very similar to what was presented in the corresponding lesson with few modifications.
-
 Steps:
 
 1 - We start with original image.
@@ -52,7 +50,7 @@ Steps:
 
 5 - Apply Canny edge detection.
 
-6 - In this project we only care about lane detection on the highway, where the curvature of the lane lines is very little and can be ignored here - we can assume the lane has the same shape throught the video and lane lines are straight lines. That allows us to keep a certain area of interest instead of dealing with all the image space. I chose to use the same 4-vertices polygon for detection as was suggested in the lesson.
+6 - In this project we only care about lane detection on the highway, where the curvature of the lane lines is very little and can be ignored here - we can assume the lane has the same shape throught the video and lane lines are straight lines. That allows us to keep a certain area of interest instead of dealing with all the image space. Simple 4-vertices polygon around the almost-constant lane shape was used to filter other parts of the image.
 
 ![image5]
 
@@ -70,14 +68,25 @@ Steps:
 
 ![image7]
 
+
+After the pipeline was doing fine for lane detection on test images the main debugging started by running the same pipeline on videos. Whenever I was seeing issues like missing lines or incorrectly detected line segments I was modifying my pipeline to return not a final video but several steps earlier instead - to see how Canny edge detection works on video, what Hough line detection output looks like, etc. Closely analyzing weird one-off issues helped devising the final parameters for the algorighms used.
+
+I wasn't using step 2 (color range filtering) originally for the first two test videos and was able to have very stable lane detection, but it failed instantly on the challenge video - dark shadow lines were interfering with the candidate line segments. That was the reason I chose to use color filterting.
+
+Step 7.1 was also added after I started working on a challenge video - too many line candidates with incorrect slopes were being detected.
+
 ###2. Potential shortcomings with your current pipeline
 
 1. Current pipeline applies colorRange filtering to original image - that disables any detection of lanes colored in different to yellow-white ranged colors. Disabling other colors also means this pipeline can only be applied for detecting lanes - other objects like traffic signs, cars, pedestrians, etc are ignored if colored differently.
-2. Pipeline is constructed with a strong assumption that we're moving on a highway - that allows us to ignore line curvature, which makes it of almost no use for in-the-city lane detection.
-3. Pipeline will work incorrectly if there are cars that merge into our lane as part of the lines will be blocked for detection (altough the right way to merge is to keep a good distance ahead of the car on the lane before merging).
-
+2. Pipeline is constructed with a very strong assumption that we're moving on a highway - that allows us to ignore line curvature, but makes it of almost no use for in-the-city lane detection.
+3. Pipeline might work incorrectly if there are objects that block lane lines - cars merging into the lane, dead animals, etc.
+4. Hard weather conditions like heavy rain, snow, etc can interfere with the lane detection by video distorting - accumulated water on the road can cause light deflection.
+5. Traffic signs placed on the road coatings (merge arrows, speed limit, etc) might be considered as lane line segments by pipeline and thus interfere with the actual lane detection.
+6. Damaged road coating segments might be considered as line segments if matched by color (can happen under different light conditions).
 
 ###3. Suggest possible improvements to your pipeline
 
-1. As can be seen in the processed videos the lines of the lane are not fully stable - lines are bit shaky (solid line is more stable), especially seen on the right line of processed challenge video. One way to improve it is to keep moving average accross the lines - keep an array of the (k,b) line parameters for 3-10 previous frames and before finilazing the (k,b) for current frame average it across the past n pairs : k_current = average(k[past 3-10 frames] + k_current). It will smooth noizy data and incorrectly detected random line segments.
-2. 
+1. As can be seen in the processed videos the lane lines are not fully stable - lines are bit shaky (solid lines are more stable), this can easily be seen on the right line of processed "challenge" video. One way to improve it is to keep moving average accross the lines for line parameters - keep an array of the (k,b) line parameters for 3-10 previous frames and before finilazing the (k,b) for current frame average it across the past n parameters : k_current = average(k[past 3-10 frames] + k_current). It will smooth noizy data and incorrectly detected random line segments.
+2. Pipeline was designed and debugged on very stable videos. On more harsher road coatings video stream needs to be stabilized before processing for smoother detection.
+3. More color ranges can be added to account for other possible line colors under different light conditions.
+4. Current pipeline filters line segments with the |slope| < 0.5 out. Better filterting can be applied by closely analyzing possible slopes based on (x,y) coordinate in the image : lower(x,y) < |slope(x,y)| < upper(x,y). I don't like this approach as it makes the pipeline less universal - we basically hardcode possible line segments.
